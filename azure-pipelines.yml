@@ -1,19 +1,37 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+# YAML pipeline
+
 
 trigger:
-- main
+ branches:
+   include:
+     - feature/*
+     - main
 
-pool:
-  vmImage: ubuntu-latest
+pool: agents-ka-adda
+
+variables:
+  code-path: '$(System.DefaultWorkingDirectory)/'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: TerraformInstaller@1
+  inputs:
+    terraformVersion: 'latest'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: TerraformTask@5
+  displayName: Terraform init
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    workingDirectory: $(code-path)
+    backendServiceArm: 'service-connection-2'
+    backendAzureRmStorageAccountName: 'saneo25'
+    backendAzureRmContainerName: 'statecontainer'
+    backendAzureRmKey: 'yamlstate.tfstate'
+
+- task: TerraformTask@5
+  displayName: Terraform plan
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    workingDirectory: $(code-path)
+    environmentServiceNameAzureRM: 'service-connection-2'
